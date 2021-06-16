@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300&display=swap" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            background-color: #EFEEEE;
+            font-family: 'Ubuntu', sans-serif;
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .card {
+            background-color: #EFEEEE;
+            border-radius: 50px;
+            box-shadow: 6px 6px 10px #bebebe, -6px -6px 10px #ffffff;
+            /* height: 400px; */
+            display: block;
+            align-items: center;
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, -30%);
+            width: 50%;
+            padding-bottom: 100px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card h2 {
+            text-align: center;
+        }
+
+        #link {
+            border: none;
+            outline: none;
+            box-shadow: inset 2px 2px 5px #bebebe, 2px 2px 10px #ffffff;
+            background: #EFEEEE;
+            padding: 10px;
+            border-radius: 50px;
+            width: 80%;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            padding-left: 20px;
+            font-family: 'Ubuntu', sans-serif;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .label {
+            float: right;
+            padding: 10px;
+            padding-right: 8%;
+            font-size: 15px;
+        }
+
+        .btn-container {
+            text-align: center;
+        }
+
+        .btn-submit {
+            margin-top: 75px;
+            width: 30%;
+            padding: 10px;
+            border-radius: 50px;
+            outline: none;
+            border: none;
+            font-weight: 600;
+            position: fixed;
+            right: 50%;
+            transform: translateX(50%);
+            box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+            transition: ease-in-out 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            box-shadow: 2px 2px 5px #bebebe, -2px -2px 5px #ffffff;
+        }
+
+        .btn-submit:hover:disabled {
+            box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+            cursor: not-allowed;
+        }
+
+        .shortened {
+            display: none;
+            position: absolute;
+            top: 75%;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, -75%);
+            font-size: 20px;
+            padding: 20px;
+            text-align: center;
+            font-weight: 700;
+            width: auto;
+            padding-left: 40px;
+            padding-right: 40px;
+            border-radius: 25px;
+        }
+
+        .shortened-label {
+            padding-top: 5px;
+            text-align: center;
+            display: block;
+            font-size: 10px;
+            color: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: ease-in-out 0.2s;
+        }
+
+        .shortened-label:hover {
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .toast {
+            position: absolute;
+            top: 95%;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, -95%);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            width: 80px;
+            text-align: center;
+            color: #eee;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: 50px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h2>URL Shortener</h2>
+        <form id="post-form">
+            {% csrf_token %}
+            <center>
+                <input type="text" name="link" id="link" autocomplete="off">
+            </center>
+            <div class="label" id="msg">^ enter your long url here</div>
+            <div class="btn-container">
+                <button type="submit" class="btn-submit" disabled>Shorten</button>
+            </div>
+        </form>
+    </div>
+    <div class="card shortened">
+        <div id="shortened">http://xyz.com/sadv</div>
+        <div class="shortened-label">click me to copy</div>
+    </div>
+
+    <div class="toast">Copied</div>
+</body>
+<script>
+    var baseUrl = window.location.href;
+
+    $("#link").on("input", function () {
+        link = $("#link").val();
+        if (link.replace("http://", "").length == 0 || link.replace("https://", "").length == 0 || !link.startsWith("http://") && !link.startsWith("https://") || link.indexOf(baseUrl) > -1) {
+            $(".btn-submit").prop("disabled", true);
+        }
+        else {
+            $(".btn-submit").prop("disabled", false);
+        }
+    })
+
+
+    $(".shortened-label").click(function () {
+        copyToClipboard("#shortened");
+    })
+    function copyToClipboard(element) {
+        $(".toast").fadeIn();
+        var $temp = $("<input>");
+        $("body").append($temp);
+        $temp.val($(element).text()).select();
+        document.execCommand("copy");
+        $temp.remove();
+        setTimeout(() => {
+            $(".toast").fadeOut();
+        }, 1000);
+    }
+
+    $(document).on('submit', '#post-form', function (e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: `${baseUrl}create`,
+            data: {
+                link: $('#link').val(),
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+            },
+            success: function (data) {
+                console.log(data);
+                $("#shortened").html(`${baseUrl}${data}`);
+                $(".shortened").fadeIn();
+            }
+        });
+    });
+</script>
+
+</html>
